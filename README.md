@@ -61,19 +61,19 @@ sql(`
 ### Main commands
 | Command | Implemented |
 | ------- | ------- |
-| SELECT | <input type="checkbox" readonly checked> |
-| UPDATE | <input type="checkbox" readonly> |
-| FROM | <input type="checkbox" readonly checked> |
-| WHERE | <input type="checkbox" readonly checked> |
+| SELECT | &#9745; |
+| UPDATE | &#9744; |
+| FROM | &#9745; |
+| WHERE | &#9745; |
 
 ### WHERE clause
 | Fetch | Implemented |
 | ------- | ------- |
-| BY ID | <input type="checkbox" readonly checked> |
-| BY TAG | <input type="checkbox" readonly checked> |
-| BY CLASS | <input type="checkbox" readonly checked> |
-| BY NAME | <input type="checkbox" readonly> |
-| BY CONTENT | <input type="checkbox" readonly> 
+| BY ID | &#9745; |
+| BY TAG | &#9745; |
+| BY CLASS | &#9745; |
+| BY NAME | &#9744; |
+| BY CONTENT | &#9744; | 
 
 
 ## Open Source Project
