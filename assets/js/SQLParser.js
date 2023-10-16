@@ -231,11 +231,11 @@ export class SQLParser {
 
     }
 
-    return this.transpile(tokens);
+    return this.#transpile(tokens);
 
   }
 
-  transpile(tokens) {
+  #transpile(tokens) {
 
     let data = new Array(tokens.length).fill(new Object()).reduce((obj, item, index) => {
       obj[tokens[index-1].type] = tokens[index-1];
