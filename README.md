@@ -57,5 +57,24 @@ sql(`
 ]
 ```
 
+## Features
+### Main commands
+| Command | Implemented |
+| ------- | ------- |
+| SELECT | <input type="checkbox" readonly checked> |
+| UPDATE | <input type="checkbox" readonly> |
+| FROM | <input type="checkbox" readonly checked> |
+| WHERE | <input type="checkbox" readonly checked> |
+
+### WHERE clause
+| Fetch | Implemented |
+| ------- | ------- |
+| BY ID | <input type="checkbox" readonly checked> |
+| BY TAG | <input type="checkbox" readonly checked> |
+| BY CLASS | <input type="checkbox" readonly checked> |
+| BY NAME | <input type="checkbox" readonly> |
+| BY CONTENT | <input type="checkbox" readonly> 
+
+
 ## Open Source Project
 > This is a Renaultivo's project, you can use it for free as most of our open source projects. If you have any improvement suggestion, please let us know (or even better: make a pull request).
