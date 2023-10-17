@@ -8,7 +8,30 @@ const TYPES = {
           id: (elementName, index) => { return `${elementName}${index != null ? `[${index}]` : ''}.id`; },
           text: (elementName, index) => { return `${elementName}${index != null ? `[${index}]` : ''}.innerText`; },
           class: (elementName, index) => { return `${elementName}${index != null ? `[${index}]` : ''}.className`; },
-          element: (elementName, index) => { return `${elementName}${index != null ? `[${index}]` : ''}` }
+          element: (elementName, index) => { return `${elementName}${index != null ? `[${index}]` : ''}` },
+          tag: (elementName, index) => { return `${elementName}${index != null ? `[${index}]` : ''}.tagName` },
+        }
+      }
+    }
+  },
+  update: {
+    type: 'update',
+    path: {
+      document: {
+        element: {
+
+        }
+      }
+    }
+  },
+  set: {
+    type: 'set',
+    path: {
+      document: {
+        element: {
+          text: (elementName, value, index) => {
+            return `${elementName}${index != null ? `[${index}]` : ''}.innerText = "${value}"`;
+          }
         }
       }
     }
@@ -64,10 +87,17 @@ export class SQLParser {
 
       let [path, alias] = arg.split(/\\s/);
 
-      if (!alias) {
-        obj += \`\${path.split('.').pop()}: \${eval(\`TYPES.select.path.\${path.toLowerCase()}("${elementName}", \${x})\`)},\`;
-      } else {
-        obj += \`\${alias}: \${eval(\`TYPES.select.path.\${path.toLowerCase()}("${elementName}", \${x})\`)},\`;
+      try {
+        
+        if (!alias) {
+          obj += \`\${path.split('.').pop()}: \${eval(\`TYPES.select.path.\${path.toLowerCase()}("${elementName}", \${x})\`)},\`;
+        } else {
+          obj += \`\${alias}: \${eval(\`TYPES.select.path.\${path.toLowerCase()}("${elementName}", \${x})\`)},\`;
+        }
+
+      } catch(error) {
+        console.log(\`%c#SQL ERROR# -> [unknow-prop]: \${path} is not a valid property name!\`, 'color: #eb3461');
+        return;
       }
 
     });
@@ -122,22 +152,126 @@ export class SQLParser {
         return lines;
 
       },
+      update: (data, elements) => {
+
+
+      },
+      set: (data, elements) => {
+
+        let args = data.args;
+        let lines = new Array();
+
+        elements.forEach((elementName) => {
+
+          if (elementName.indexOf('List') != -1) {
+
+            lines.push(
+  `(() => {
+
+    let obj = '';
+
+    for (let x=0; x<${elementName}.length; x++) {
+
+      let args = ["${args.join('","')}"];
+
+      args.forEach((arg) => {
+        
+        let [path, value] = arg.split('=');
+
+        if (!!value && value.indexOf('.') != -1) {
+
+          let finalValue = '';
+
+          if (value.indexOf('+') != -1) {
+
+            value.split('+').forEach((v) => {
+
+              if (v.indexOf('.') != -1) {
+                finalValue += eval(\`TYPES.select.path.\${v.toLowerCase()}("${elementName}", \${x})\`);
+              } else {
+                finalValue += v;
+              }
+
+              finalValue += ' +';
+
+            });
+
+            finalValue = finalValue.substring(0, finalValue.length-1);
+
+            value = finalValue;
+
+          } else {
+            
+            value = eval(\`TYPES.select.path.\${value.toLowerCase()}("${elementName}", \${x})\`);
+        
+          }
+
+        }
+
+        obj += \`\${eval(\`TYPES.set.path.\${path.toLowerCase()}("${elementName}", \${value}, x)\`)};\\n\`;
+
+      });
+
+    }
+
+    eval(obj);
+
+  })()`)
+
+
+          } else {
+
+            let obj = '';
+
+            args.forEach((arg) => {
+              
+              let [path, value] = arg.split(/=/);
+
+              obj += `${eval(`TYPES.set.path.${path.toLowerCase()}("${elementName}", ${value})`)};\n`;
+
+            });
+
+            obj = obj.substring(0, obj.length-1);
+
+            lines.push(obj);
+
+          }
+
+
+        });
+
+        return lines;
+
+      },
       from: () => {
 
       },
       where: (data) =>  {
 
-        let args = data.args;
+        let conditionList = data.args;
 
         let lines = new Array();
 
-        args.join(' ').split(/(and|AND)/gm).forEach((arg) => {
+        conditionList.join(' ').split(/or|OR/gm).forEach((condition) => {
 
-          arg = arg.replaceAll(';', '');
+          if ((/(?:in|IN|In|iN)\s{0,}\(/).test(condition)) {
 
-          let command = arg.split('=').map((item) => { return item.trim(); });
+            let matchs = condition.trim().substring(0, condition.length-1).split(/(?:in|IN|In|iN)\s{0,}\(/);
+            let values = matchs.splice(0, 1);
 
-          lines.push(eval(`TYPES.where.path.${command[0].toLowerCase()}(${command[1]})`));
+            matchs.join(' ').replaceAll(')', '').split(' ').forEach((p, index, array) => {
+
+              lines.push(eval(`TYPES.where.path.${values[0].trim().toLowerCase()}(${p.trim()})`));
+            
+            });
+
+          } else {
+            
+            let command = condition.split('=').map((item) => { return item.trim(); });
+            
+            lines.push(eval(`TYPES.where.path.${command[0].toLowerCase()}(${command[1]})`));
+
+          }
 
         });
 
@@ -181,11 +315,13 @@ export class SQLParser {
       args.push(accumulator);
     }
 
+
+    
     let finalArgList = new Array();
 
     for (let x=0; x<args.length; x++) {
 
-      if (args[x].indexOf('.') <= -1) {
+      if (args[x].indexOf('.') <= -1 && !/(or|OR)/.test(args[x])) {
         finalArgList[finalArgList.length-1] = finalArgList[finalArgList.length-1] + ' ' + args[x];
       } else {
         finalArgList.push(args[x]);
@@ -200,7 +336,8 @@ export class SQLParser {
 
   }
 
-  parse(origninalCode) {
+  parse(origninalCode, debug=false) {
+  
     this.#code = origninalCode.trim().replaceAll('\n', ' ');
 
     let code = this.#code;
@@ -231,11 +368,11 @@ export class SQLParser {
 
     }
 
-    return this.#transpile(tokens);
+    return this.#transpile(tokens, debug);
 
   }
 
-  #transpile(tokens) {
+  #transpile(tokens, debug=false) {
 
     let data = new Array(tokens.length).fill(new Object()).reduce((obj, item, index) => {
       obj[tokens[index-1].type] = tokens[index-1];
@@ -267,12 +404,16 @@ export class SQLParser {
 
     }).join('\n\t');
 
-    let body = '.concat(' + this.clauses.select(data['select'], elements).join(').concat(') + ')';
+    let body = '';
+    let code = '';
 
-    let code =
+    if (data['select']) {
+      body =  '.concat(' + this.clauses.select(data['select'], elements).join(').concat(') + ')';
+      
+      code =
 `(() => {
 
-  ${header}
+    ${header}
   
   let result = new Array();
 
@@ -281,6 +422,24 @@ export class SQLParser {
   return result;
 
 })();`;
+    
+    } else if (data['update']) {
+      body =  this.clauses.set(data['set'], elements).join(';\n  ');
+      
+      code =
+`(() => {
+
+    ${header}
+  
+  ${body};
+
+})();`;
+      
+    }
+
+    if (debug) {
+      console.log(code);
+    }
 
     return eval(code);
 

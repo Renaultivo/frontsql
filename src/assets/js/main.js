@@ -9,19 +9,20 @@ import { SQLParser } from "./SQLParser.js";
     return;
   }
   
-  fetch('./assets/samples/code1.sql').then((response) => {
+  // fetch('./assets/samples/code2.sql').then((response) => {
 
-    response.text().then((code) => {
+  //   response.text().then((code) => {
+      
+  //     console.log(code);
+  //     console.log(new SQLParser().parse(code));
 
-      console.log(new SQLParser().parse(code));
+  //   });
 
-    });
+  // });
 
-  });
+  window.sql = (code, debug=false) => {
 
-  window.sql = (code) => {
-
-    return new SQLParser().parse(code);
+    return new SQLParser().parse(code, debug);
 
   }
 
