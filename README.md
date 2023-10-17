@@ -62,7 +62,7 @@ sql(`
 | Command | Implemented |
 | ------- | ------- |
 | SELECT | &#9745; |
-| UPDATE | &#9744; |
+| UPDATE | &#9745; |
 | FROM | &#9745; |
 | WHERE | &#9745; |
 
